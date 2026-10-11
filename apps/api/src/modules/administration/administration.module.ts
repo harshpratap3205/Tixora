@@ -96,16 +96,17 @@ managerRouter.patch(
   '/cinemas/:id',
   requireRoles('CINEMA_MANAGER', 'PLATFORM_ADMIN'),
   asyncHandler(async (req, res) => {
-    assertCinemaAccess(req.user, req.params.id);
+    const id = String(req.params.id);
+    assertCinemaAccess(req.user, id);
     const input = updateCinemaSchema.parse(req.body);
-    const updated = await cinemasService.updateCinema(req.params.id, input);
+    const updated = await cinemasService.updateCinema(id, input);
     await auditingService.record({
       actorUserId: req.user!.id,
       actorRole: 'CINEMA_MANAGER',
       action: 'CINEMA_UPDATED',
       entityType: 'CINEMA',
-      entityId: req.params.id,
-      cinemaId: req.params.id,
+      entityId: id,
+      cinemaId: id,
       metadata: input,
       ipAddress: req.ip,
     });
@@ -116,7 +117,8 @@ managerRouter.patch(
 managerRouter.get(
   '/screens/:id',
   asyncHandler(async (req, res) => {
-    const screen = await screensService.getScreenWithSeats(req.params.id);
+    const id = String(req.params.id);
+    const screen = await screensService.getScreenWithSeats(id);
     assertCinemaAccess(req.user, screen.cinemaId);
     res.json({ success: true, data: screen });
   })
@@ -126,16 +128,17 @@ managerRouter.post(
   '/cinemas/:id/screens',
   requireRoles('CINEMA_MANAGER', 'PLATFORM_ADMIN'),
   asyncHandler(async (req, res) => {
-    assertCinemaAccess(req.user, req.params.id);
+    const cinemaId = String(req.params.id);
+    assertCinemaAccess(req.user, cinemaId);
     const input = createScreenSchema.parse(req.body);
-    const screen = await screensService.createScreen(req.params.id, input);
+    const screen = await screensService.createScreen(cinemaId, input);
     await auditingService.record({
       actorUserId: req.user!.id,
       actorRole: 'CINEMA_MANAGER',
       action: 'SCREEN_CREATED',
       entityType: 'SCREEN',
       entityId: screen.id,
-      cinemaId: req.params.id,
+      cinemaId,
       metadata: { name: screen.name, rows: screen.totalRows, cols: screen.totalCols },
       ipAddress: req.ip,
     });
@@ -147,16 +150,17 @@ managerRouter.put(
   '/screens/:id/seats',
   requireRoles('CINEMA_MANAGER', 'PLATFORM_ADMIN'),
   asyncHandler(async (req, res) => {
-    const screen = await screensService.getScreenWithSeats(req.params.id);
+    const screenId = String(req.params.id);
+    const screen = await screensService.getScreenWithSeats(screenId);
     assertCinemaAccess(req.user, screen.cinemaId);
     const input = updateSeatLayoutSchema.parse(req.body);
-    const updated = await screensService.updateScreenSeats(req.params.id, input);
+    const updated = await screensService.updateScreenSeats(screenId, input);
     await auditingService.record({
       actorUserId: req.user!.id,
       actorRole: 'CINEMA_MANAGER',
       action: 'SCREEN_LAYOUT_UPDATED',
       entityType: 'SCREEN',
-      entityId: req.params.id,
+      entityId: screenId,
       cinemaId: screen.cinemaId,
       metadata: { modifiedSeatCount: input.seats.length },
       ipAddress: req.ip,
@@ -194,13 +198,14 @@ managerRouter.patch(
   '/shows/:id',
   requireRoles('CINEMA_MANAGER', 'PLATFORM_ADMIN'),
   asyncHandler(async (req, res) => {
-    const existing = await showtimesService.getShowDetails(req.params.id);
+    const showId = String(req.params.id);
+    const existing = await showtimesService.getShowDetails(showId);
     assertCinemaAccess(req.user, existing.cinemaId);
     const statusSchema = z.object({
       status: z.enum(['DRAFT', 'PUBLISHED', 'CANCELLED']),
     });
     const body = statusSchema.parse(req.body);
-    const updated = await showtimesService.updateShowStatus(req.params.id, body.status);
+    const updated = await showtimesService.updateShowStatus(showId, body.status);
     res.json({ success: true, data: updated });
   })
 );
@@ -209,16 +214,17 @@ managerRouter.put(
   '/shows/:id/pricing',
   requireRoles('CINEMA_MANAGER', 'PLATFORM_ADMIN'),
   asyncHandler(async (req, res) => {
-    const existing = await showtimesService.getShowDetails(req.params.id);
+    const showId = String(req.params.id);
+    const existing = await showtimesService.getShowDetails(showId);
     assertCinemaAccess(req.user, existing.cinemaId);
     const input = updateShowPricingSchema.parse(req.body);
-    const updated = await showtimesService.updateShowPricing(req.params.id, input);
+    const updated = await showtimesService.updateShowPricing(showId, input);
     await auditingService.record({
       actorUserId: req.user!.id,
       actorRole: 'CINEMA_MANAGER',
       action: 'SHOW_PRICING_UPDATED',
       entityType: 'SHOW',
-      entityId: req.params.id,
+      entityId: showId,
       cinemaId: existing.cinemaId,
       metadata: input.categoryPrices,
       ipAddress: req.ip,
@@ -425,7 +431,7 @@ adminRouter.patch(
   '/movies/:id',
   asyncHandler(async (req, res) => {
     const input = updateMovieSchema.parse(req.body);
-    const movie = await catalogService.updateMovie(req.params.id, input);
+    const movie = await catalogService.updateMovie(String(req.params.id), input);
     await auditingService.record({
       actorUserId: req.user!.id,
       actorRole: 'PLATFORM_ADMIN',
@@ -462,7 +468,7 @@ adminRouter.patch(
   '/cinemas/:id',
   asyncHandler(async (req, res) => {
     const input = updateCinemaSchema.parse(req.body);
-    const cinema = await cinemasService.updateCinema(req.params.id, input);
+    const cinema = await cinemasService.updateCinema(String(req.params.id), input);
     await auditingService.record({
       actorUserId: req.user!.id,
       actorRole: 'PLATFORM_ADMIN',
@@ -497,6 +503,7 @@ adminRouter.get(
 adminRouter.patch(
   '/users/:id/status',
   asyncHandler(async (req, res) => {
+    const targetUserId = String(req.params.id);
     const schema = z.object({
       status: z.enum(['ACTIVE', 'SUSPENDED']).optional(),
       roles: z
@@ -512,12 +519,12 @@ adminRouter.patch(
       if (input.status) {
         await tx.query(
           `UPDATE users SET status = $1, updated_at = NOW() WHERE id = $2`,
-          [input.status, req.params.id]
+          [input.status, targetUserId]
         );
       }
 
       if (input.roles && input.roles.length > 0) {
-        await tx.query(`DELETE FROM user_roles WHERE user_id = $1`, [req.params.id]);
+        await tx.query(`DELETE FROM user_roles WHERE user_id = $1`, [targetUserId]);
         for (const rName of input.roles) {
           const rRes = await tx.query<{ id: number }>(
             `SELECT id FROM roles WHERE name = $1`,
@@ -526,7 +533,7 @@ adminRouter.patch(
           if (rRes.rows[0]) {
             await tx.query(
               `INSERT INTO user_roles (user_id, role_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
-              [req.params.id, rRes.rows[0].id]
+              [targetUserId, rRes.rows[0].id]
             );
           }
         }
@@ -537,7 +544,7 @@ adminRouter.patch(
           `INSERT INTO cinema_staff (id, cinema_id, user_id, permission_role)
            VALUES ($1, $2, $3, 'CINEMA_MANAGER')
            ON CONFLICT (cinema_id, user_id) DO UPDATE SET permission_role = 'CINEMA_MANAGER'`,
-          [crypto.randomUUID(), input.assignCinemaId, req.params.id]
+          [crypto.randomUUID(), input.assignCinemaId, targetUserId]
         );
       }
 
@@ -547,7 +554,7 @@ adminRouter.patch(
           actorRole: 'PLATFORM_ADMIN',
           action: 'USER_STATUS_OR_ROLE_UPDATED',
           entityType: 'USER',
-          entityId: req.params.id,
+          entityId: targetUserId,
           metadata: input,
           ipAddress: req.ip,
         },
@@ -555,7 +562,7 @@ adminRouter.patch(
       );
     });
 
-    res.json({ success: true, data: { id: req.params.id, updated: true } });
+    res.json({ success: true, data: { id: targetUserId, updated: true } });
   })
 );
 
@@ -638,3 +645,4 @@ adminRouter.get(
     res.json({ success: true, data: statsRes.rows[0] });
   })
 );
+

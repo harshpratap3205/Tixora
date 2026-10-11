@@ -453,7 +453,7 @@ paymentsRouter.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     const payment = await paymentsService.getPaymentById(
-      req.params.id,
+      String(req.params.id),
       req.user!.id,
       req.user!.roles
     );
@@ -472,7 +472,8 @@ paymentsRouter.post(
     }
 
     const payload = webhookPayloadSchema.parse(req.body);
-    const result = await paymentsService.processWebhook(req.params.provider, payload);
+    const result = await paymentsService.processWebhook(String(req.params.provider), payload);
     res.json({ success: true, data: result });
   })
 );
+

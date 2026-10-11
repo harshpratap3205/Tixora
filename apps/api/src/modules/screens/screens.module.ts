@@ -29,7 +29,7 @@ export const updateSeatLayoutSchema = z.object({
 });
 
 export class ScreensService {
-  public async getScreenWithSeats(screenId: string) {
+  public async getScreenWithSeats(screenId: string): Promise<Record<string, any>> {
     const scRes = await db.query(
       `SELECT id, cinema_id as "cinemaId", name, format_type as "formatType",
               sound_system as "soundSystem", total_rows as "totalRows",
@@ -133,3 +133,4 @@ export class ScreensService {
 }
 
 export const screensService = new ScreensService();
+

@@ -406,3 +406,4 @@ identityRouter.post(
     res.json({ success: true, data: { message: 'Logged out successfully' } });
   })
 );
+

@@ -289,7 +289,7 @@ catalogRouter.get(
 catalogRouter.get(
   '/:id',
   asyncHandler(async (req, res) => {
-    const movie = await catalogService.getMovieByIdOrSlug(req.params.id);
+    const movie = await catalogService.getMovieByIdOrSlug(String(req.params.id));
     res.json({ success: true, data: movie });
   })
 );
@@ -298,10 +298,11 @@ catalogRouter.get(
   '/:id/shows',
   asyncHandler(async (req, res) => {
     const result = await catalogService.getMovieShowtimes(
-      req.params.id,
+      String(req.params.id),
       req.query.city as string | undefined,
       req.query.date as string | undefined
     );
     res.json({ success: true, data: result });
   })
 );
+

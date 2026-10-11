@@ -57,7 +57,7 @@ export class CinemasService {
     return res.rows;
   }
 
-  public async getCinemaById(id: string) {
+  public async getCinemaById(id: string): Promise<Record<string, any>> {
     const res = await db.query(
       `SELECT c.id, c.name, c.slug, c.city, c.neighborhood, c.address,
               c.facilities, c.status, c.timezone, c.created_at as "createdAt"
@@ -188,7 +188,8 @@ cinemasRouter.get(
 cinemasRouter.get(
   '/:id',
   asyncHandler(async (req, res) => {
-    const cinema = await cinemasService.getCinemaById(req.params.id);
+    const cinema = await cinemasService.getCinemaById(String(req.params.id));
     res.json({ success: true, data: cinema });
   })
 );
+

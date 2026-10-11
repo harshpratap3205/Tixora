@@ -5,8 +5,7 @@
   "description": "Tixora — Production-Minded Movie Ticket Booking Platform (Next.js + Node.js/Express + PostgreSQL)",
   "workspaces": [
     "apps/api",
-    "apps/web",
-    "packages/*"
+    "apps/web"
   ],
   "scripts": {
     "dev:api": "npm --workspace=@tixora/api run dev",

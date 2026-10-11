@@ -169,7 +169,7 @@ export const showtimesRouter = Router();
 showtimesRouter.get(
   '/:id',
   asyncHandler(async (req, res) => {
-    const show = await showtimesService.getShowDetails(req.params.id);
+    const show = await showtimesService.getShowDetails(String(req.params.id));
     res.json({ success: true, data: show });
   })
 );
@@ -177,8 +177,9 @@ showtimesRouter.get(
 showtimesRouter.get(
   '/:id/seats',
   asyncHandler(async (req, res) => {
-    const show = await showtimesService.getShowDetails(req.params.id);
-    const seats = await inventoryService.getShowSeats(req.params.id);
+    const showId = String(req.params.id);
+    const show = await showtimesService.getShowDetails(showId);
+    const seats = await inventoryService.getShowSeats(showId);
     res.json({
       success: true,
       data: {
@@ -188,3 +189,4 @@ showtimesRouter.get(
     });
   })
 );
+

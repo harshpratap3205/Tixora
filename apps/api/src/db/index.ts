@@ -22,7 +22,7 @@ class DatabaseManager {
 
   public async init(): Promise<void> {
     if (this.initialized) return;
-
+console.log('DatabaseManager: Initializing database connection...',config.databaseUrl);
     if (config.databaseUrl) {
       logger.info('Connecting to external PostgreSQL via DATABASE_URL');
       this.pgPool = new Pool({

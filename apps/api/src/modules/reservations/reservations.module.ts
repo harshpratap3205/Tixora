@@ -244,7 +244,7 @@ reservationsRouter.get(
   '/:id',
   requireAuth,
   asyncHandler(async (req, res) => {
-    const hold = await reservationsService.getHold(req.params.id, req.user!.id);
+    const hold = await reservationsService.getHold(String(req.params.id), req.user!.id);
     res.json({ success: true, data: hold });
   })
 );
@@ -253,7 +253,8 @@ reservationsRouter.delete(
   '/:id',
   requireAuth,
   asyncHandler(async (req, res) => {
-    const result = await reservationsService.releaseHold(req.params.id, req.user!.id);
+    const result = await reservationsService.releaseHold(String(req.params.id), req.user!.id);
     res.json({ success: true, data: result });
   })
 );
+

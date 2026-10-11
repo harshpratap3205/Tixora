@@ -94,3 +94,4 @@ export class NotificationsAndJobsService {
 }
 
 export const notificationsAndJobsService = new NotificationsAndJobsService();
+

@@ -145,7 +145,7 @@ export class BookingsService {
     bookingId: string,
     requesterUserId: string,
     requesterRoles: string[]
-  ) {
+  ): Promise<Record<string, any>> {
     await inventoryService.releaseExpiredHolds();
 
     const res = await db.query(
@@ -337,7 +337,7 @@ bookingsRouter.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     const booking = await bookingsService.getBookingDetails(
-      req.params.id,
+      String(req.params.id),
       req.user!.id,
       req.user!.roles
     );
@@ -350,7 +350,7 @@ bookingsRouter.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     const booking = await bookingsService.getBookingDetails(
-      req.params.id,
+      String(req.params.id),
       req.user!.id,
       req.user!.roles
     );
@@ -372,7 +372,7 @@ bookingsRouter.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     const ticket = await ticketsService.getTicketByBooking(
-      req.params.id,
+      String(req.params.id),
       req.user!.id,
       req.user!.roles
     );
@@ -386,7 +386,7 @@ bookingsRouter.post(
   asyncHandler(async (req, res) => {
     const input = cancelBookingSchema.parse(req.body || {});
     const booking = await bookingsService.cancelBooking(
-      req.params.id,
+      String(req.params.id),
       req.user!.id,
       req.user!.roles,
       input.reason
@@ -394,3 +394,4 @@ bookingsRouter.post(
     res.json({ success: true, data: booking });
   })
 );
+
