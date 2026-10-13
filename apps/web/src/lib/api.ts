@@ -1,5 +1,6 @@
 export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v1';
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  (typeof window !== 'undefined' ? '/api/v1' : 'http://127.0.0.1:8080/api/v1');
 
 export interface ApiUser {
   id: string;

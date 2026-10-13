@@ -5,8 +5,8 @@ dotenv.config();
 console.log('Loaded environment variables from .env file',process.env.NODE_ENV,process.env.DATABASE_URL);
 export const config = {
   env: process.env.NODE_ENV || 'development',
-  port: parseInt(process.env.PORT || '8080', 10),
-  corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  port: parseInt(process.env.API_PORT || (process.env.SERVICE_TYPE === 'web' ? '8080' : process.env.PORT) || '8080', 10),
+  corsOrigin: process.env.CORS_ORIGIN || '*',
   databaseUrl: process.env.DATABASE_URL || '',
   jwt: {
     accessSecret:
