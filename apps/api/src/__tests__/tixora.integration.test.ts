@@ -2,6 +2,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import request from 'supertest';
 import { Express } from 'express';
 import { createApp } from '../app';
+import { db } from '../db';
 import { DEMO_IDS } from '../db/seed';
 import { paymentsService } from '../modules/payments/payments.module';
 
@@ -15,6 +16,19 @@ describe('Tixora V1 — Comprehensive Integration & Concurrency Test Suite', () 
 
   beforeAll(async () => {
     app = await createApp({ seed: true });
+
+    // Reset test inventory and holds for show1, show2, and show3 to ensure fresh state across test runs
+    const showIds = [DEMO_IDS.shows.show1, DEMO_IDS.shows.show2, DEMO_IDS.shows.show3];
+    await db.query('DELETE FROM payment_events WHERE event_id LIKE $1', ['evt_%']);
+    await db.query('DELETE FROM tickets WHERE booking_id IN (SELECT id FROM bookings WHERE show_id = ANY($1::uuid[]))', [showIds]);
+    await db.query('DELETE FROM payments WHERE booking_id IN (SELECT id FROM bookings WHERE show_id = ANY($1::uuid[]))', [showIds]);
+    await db.query('DELETE FROM booking_items WHERE booking_id IN (SELECT id FROM bookings WHERE show_id = ANY($1::uuid[]))', [showIds]);
+    await db.query(
+      "UPDATE show_seats SET status = 'AVAILABLE', active_hold_id = NULL, booking_id = NULL, hold_expires_at = NULL WHERE show_id = ANY($1::uuid[])",
+      [showIds]
+    );
+    await db.query('DELETE FROM bookings WHERE show_id = ANY($1::uuid[])', [showIds]);
+    await db.query('DELETE FROM seat_holds WHERE show_id = ANY($1::uuid[])', [showIds]);
   });
 
   it('1. Health & Readiness probe returns UP and connected database', async () => {
@@ -25,9 +39,10 @@ describe('Tixora V1 — Comprehensive Integration & Concurrency Test Suite', () 
   });
 
   it('2. Authentication: Register new customer, login demo accounts, rotate refresh token', async () => {
-    // Register a brand new customer
+    // Register a brand new customer with unique email
+    const uniqueEmail = `newcustomer_${Date.now()}_${Math.random().toString(36).substring(7)}@tixora.cinema`;
     const regRes = await request(app).post('/api/v1/auth/register').send({
-      email: 'newcustomer@tixora.cinema',
+      email: uniqueEmail,
       password: 'StrongPassword@123',
       fullName: 'Naina Talwar',
       preferredCity: 'Mumbai',
@@ -175,12 +190,13 @@ describe('Tixora V1 — Comprehensive Integration & Concurrency Test Suite', () 
     const holdId = holdRes.body.data.id;
 
     // Create booking with idempotency key
+    const runId = `${Date.now()}_${Math.random().toString(36).substring(7)}`;
     const bookingRes1 = await request(app)
       .post('/api/v1/bookings')
       .set('Authorization', `Bearer ${customerToken}`)
       .send({
         holdId,
-        idempotencyKey: 'idem_booking_e4_e5_test',
+        idempotencyKey: `idem_booking_${runId}`,
       });
     expect(bookingRes1.status).toBe(201);
     const bookingId = bookingRes1.body.data.id;
@@ -191,7 +207,7 @@ describe('Tixora V1 — Comprehensive Integration & Concurrency Test Suite', () 
       .set('Authorization', `Bearer ${customerToken}`)
       .send({
         holdId,
-        idempotencyKey: 'idem_booking_e4_e5_test',
+        idempotencyKey: `idem_booking_${runId}`,
       });
     expect(bookingRes2.status).toBe(201);
     expect(bookingRes2.body.data.id).toBe(bookingId);
@@ -202,14 +218,14 @@ describe('Tixora V1 — Comprehensive Integration & Concurrency Test Suite', () 
       .set('Authorization', `Bearer ${customerToken}`)
       .send({
         bookingId,
-        idempotencyKey: 'idem_payment_e4_e5_test',
+        idempotencyKey: `idem_payment_${runId}`,
       });
     expect(paymentRes.status).toBe(201);
     const providerIntentId = paymentRes.body.data.providerIntentId;
 
     // Attempt webhook with forged signature -> 401 Unauthorized
     const webhookPayload = {
-      eventId: 'evt_valid_payment_001',
+      eventId: `evt_valid_payment_${runId}`,
       eventType: 'payment.succeeded' as const,
       providerIntentId,
     };
@@ -275,12 +291,13 @@ describe('Tixora V1 — Comprehensive Integration & Concurrency Test Suite', () 
       });
     expect(hold1.status).toBe(201);
 
+    const runIdLate = `${Date.now()}_${Math.random().toString(36).substring(7)}`;
     const booking1 = await request(app)
       .post('/api/v1/bookings')
       .set('Authorization', `Bearer ${customerToken}`)
       .send({
         holdId: hold1.body.data.id,
-        idempotencyKey: 'idem_late_payment_booking_1',
+        idempotencyKey: `idem_late_payment_booking_${runIdLate}`,
       });
     expect(booking1.status).toBe(201);
 
@@ -289,7 +306,7 @@ describe('Tixora V1 — Comprehensive Integration & Concurrency Test Suite', () 
       .set('Authorization', `Bearer ${customerToken}`)
       .send({
         bookingId: booking1.body.data.id,
-        idempotencyKey: 'idem_late_payment_intent_1',
+        idempotencyKey: `idem_late_payment_intent_${runIdLate}`,
       });
     expect(payment1.status).toBe(201);
 
@@ -308,7 +325,7 @@ describe('Tixora V1 — Comprehensive Integration & Concurrency Test Suite', () 
 
     // Now Customer 1's payment webhook arrives late!
     const lateWebhookPayload = {
-      eventId: 'evt_late_payment_999',
+      eventId: `evt_late_payment_${runIdLate}`,
       eventType: 'payment.succeeded' as const,
       providerIntentId: payment1.body.data.providerIntentId,
     };

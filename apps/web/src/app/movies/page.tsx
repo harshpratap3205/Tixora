@@ -4,8 +4,9 @@ import React, { Suspense, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { Search, Star, Filter, RotateCcw, ArrowRight } from 'lucide-react';
+import { Search, Star, Filter, RotateCcw, ArrowRight, Play } from 'lucide-react';
 import { apiFetch, Movie } from '@/lib/api';
+import TrailerModal from '@/components/TrailerModal';
 
 const LANGUAGES = ['', 'English', 'Hindi', 'French', 'Tamil', 'Telugu', 'Marathi'];
 const GENRES = ['', 'Sci-Fi', 'Thriller', 'Noir', 'Drama', 'Romance', 'Action', 'Mystery'];
@@ -23,6 +24,7 @@ function MoviesCatalogContent() {
   const [language, setLanguage] = useState(searchParams.get('language') || '');
   const [genre, setGenre] = useState(searchParams.get('genre') || '');
   const [status, setStatus] = useState(searchParams.get('status') || '');
+  const [activeTrailerMovie, setActiveTrailerMovie] = useState<Movie | null>(null);
   const [sort, setSort] = useState(searchParams.get('sort') || 'rating');
 
   useEffect(() => {
@@ -179,6 +181,21 @@ function MoviesCatalogContent() {
                   <Star className="h-3 w-3 fill-amber-400" />
                   {movie.imdbRating.toFixed(1)}
                 </div>
+                {movie.trailerUrl && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setActiveTrailerMovie(movie);
+                    }}
+                    aria-label={`Watch trailer for ${movie.title}`}
+                    className="absolute bottom-2.5 right-2.5 z-10 flex items-center gap-1 rounded bg-black/85 border border-amber-400/40 px-2.5 py-1 text-[11px] font-mono text-amber-300 hover:bg-amber-400 hover:text-black transition shadow-lg"
+                  >
+                    <Play className="h-3 w-3 fill-current" />
+                    Trailer
+                  </button>
+                )}
               </div>
 
               <div className="flex flex-1 flex-col justify-between p-4 space-y-4">
@@ -203,6 +220,14 @@ function MoviesCatalogContent() {
           ))}
         </div>
       )}
+
+      {/* Trailer Modal */}
+      <TrailerModal
+        isOpen={!!activeTrailerMovie}
+        onClose={() => setActiveTrailerMovie(null)}
+        title={activeTrailerMovie?.title || ''}
+        trailerUrl={activeTrailerMovie?.trailerUrl}
+      />
     </div>
   );
 }

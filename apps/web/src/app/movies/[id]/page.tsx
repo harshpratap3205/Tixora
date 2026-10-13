@@ -16,11 +16,13 @@ import {
 } from 'lucide-react';
 import { apiFetch, Movie, Showtime } from '@/lib/api';
 import { useApp } from '@/components/Providers';
+import TrailerModal, { getYouTubeEmbedUrl } from '@/components/TrailerModal';
 
 export default function MovieDetailPage() {
   const params = useParams<{ id: string }>();
   const { city, setCity } = useApp();
   const [selectedFormat, setSelectedFormat] = useState<string>('');
+  const [isTrailerOpen, setIsTrailerOpen] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ['movie-shows', params.id, city],
@@ -176,15 +178,22 @@ export default function MovieDetailPage() {
               )}
 
               {movie.trailerUrl && (
-                <div className="pt-2">
+                <div className="pt-2 flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsTrailerOpen(true)}
+                    className="inline-flex items-center gap-2 rounded border border-amber-400/50 bg-amber-400/10 px-4 py-2 text-xs font-mono uppercase tracking-wider text-amber-300 hover:bg-amber-400/20 hover:border-amber-400 transition"
+                  >
+                    <Play className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                    Watch Fullscreen Trailer
+                  </button>
                   <a
                     href={movie.trailerUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-2 rounded border border-zinc-700 bg-zinc-900/90 px-4 py-2 text-xs font-mono uppercase tracking-wider text-zinc-200 hover:border-amber-400 hover:text-amber-300"
+                    className="inline-flex items-center gap-2 rounded border border-zinc-700 bg-zinc-900/90 px-3.5 py-2 text-xs font-mono uppercase tracking-wider text-zinc-300 hover:border-zinc-500 hover:text-white transition"
                   >
-                    <Play className="h-3.5 w-3.5 text-amber-400" />
-                    Watch Official Trailer
+                    Open on YouTube
                   </a>
                 </div>
               )}
@@ -192,6 +201,38 @@ export default function MovieDetailPage() {
           </div>
         </div>
       </section>
+
+      {/* Embedded Trailer Spotlight */}
+      {movie.trailerUrl && (
+        <section className="mx-auto max-w-7xl px-4 sm:px-6">
+          <div className="overflow-hidden rounded-xl border border-zinc-800 bg-[#0d0d12] shadow-2xl">
+            <div className="flex items-center justify-between border-b border-zinc-800/80 bg-[#121218] px-5 py-3">
+              <div className="flex items-center gap-2">
+                <Play className="h-4 w-4 text-amber-400" />
+                <h3 className="font-display text-sm font-semibold uppercase tracking-wider text-white">
+                  Theatrical Trailer Presentation · {movie.title}
+                </h3>
+              </div>
+              <span className="font-mono text-xs text-amber-400/80">Full HD · Dolby 5.1 Preview</span>
+            </div>
+            <div className="relative aspect-video w-full max-h-[520px] bg-black">
+              {getYouTubeEmbedUrl(movie.trailerUrl) ? (
+                <iframe
+                  src={getYouTubeEmbedUrl(movie.trailerUrl)!}
+                  title={`${movie.title} Trailer Preview`}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                  className="h-full w-full border-0"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-zinc-500 font-mono text-xs">
+                  Trailer stream loading...
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Showtimes Selection Section */}
       <section className="mx-auto max-w-7xl px-4 sm:px-6 space-y-8">
@@ -357,6 +398,14 @@ export default function MovieDetailPage() {
           </div>
         )}
       </section>
+
+      {/* Trailer Modal */}
+      <TrailerModal
+        isOpen={isTrailerOpen}
+        onClose={() => setIsTrailerOpen(false)}
+        title={movie.title}
+        trailerUrl={movie.trailerUrl}
+      />
     </div>
   );
 }

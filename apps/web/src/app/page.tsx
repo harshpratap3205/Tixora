@@ -14,14 +14,17 @@ import {
   MapPin,
   Shield,
   Ticket,
+  Play,
 } from 'lucide-react';
 import { apiFetch, Cinema, Movie } from '@/lib/api';
 import { useApp } from '@/components/Providers';
+import TrailerModal from '@/components/TrailerModal';
 
 export default function HomePage() {
   const router = useRouter();
   const { city, setCity } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeTrailerMovie, setActiveTrailerMovie] = useState<Movie | null>(null);
 
   const { data: movies, isLoading: loadingMovies } = useQuery({
     queryKey: ['movies', 'home'],
@@ -112,6 +115,16 @@ export default function HomePage() {
                     <Ticket className="h-4 w-4" />
                     Reserve Seats Now
                   </Link>
+                  {featuredMovie.trailerUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setActiveTrailerMovie(featuredMovie)}
+                      className="inline-flex items-center gap-2 rounded border border-amber-400/50 bg-amber-400/10 px-5 py-3 text-sm font-medium text-amber-300 transition hover:bg-amber-400/20 hover:border-amber-400"
+                    >
+                      <Play className="h-4 w-4 fill-amber-400 text-amber-400" />
+                      Watch Official Trailer
+                    </button>
+                  )}
                   <Link
                     href="/movies"
                     className="inline-flex items-center gap-2 rounded border border-zinc-700 bg-zinc-900/80 px-5 py-3 text-sm font-medium text-zinc-200 transition hover:border-amber-400/60 hover:text-white"
@@ -230,6 +243,21 @@ export default function HomePage() {
                     <Star className="h-3 w-3 fill-amber-400" />
                     {movie.imdbRating.toFixed(1)}
                   </div>
+                  {movie.trailerUrl && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setActiveTrailerMovie(movie);
+                      }}
+                      aria-label={`Watch trailer for ${movie.title}`}
+                      className="absolute bottom-2.5 right-2.5 z-10 flex items-center gap-1 rounded bg-black/85 border border-amber-400/40 px-2.5 py-1 text-[11px] font-mono text-amber-300 hover:bg-amber-400 hover:text-black transition shadow-lg"
+                    >
+                      <Play className="h-3 w-3 fill-current" />
+                      Trailer
+                    </button>
+                  )}
                 </div>
 
                 <div className="flex flex-1 flex-col justify-between p-4 space-y-4">
@@ -348,9 +376,25 @@ export default function HomePage() {
                       {movie.synopsis}
                     </p>
                   </div>
-                  <span className="text-xs font-mono text-zinc-500">
-                    Dir. {movie.director}
-                  </span>
+                  <div className="flex items-center justify-between border-t border-zinc-900 pt-2 text-xs font-mono">
+                    <span className="text-zinc-500">
+                      Dir. {movie.director}
+                    </span>
+                    {movie.trailerUrl && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setActiveTrailerMovie(movie);
+                        }}
+                        className="flex items-center gap-1 text-[11px] text-amber-400 hover:text-amber-300 transition"
+                      >
+                        <Play className="h-3 w-3 fill-amber-400" />
+                        Watch Teaser
+                      </button>
+                    )}
+                  </div>
                 </div>
               </Link>
             ))}
@@ -399,6 +443,14 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Fullscreen HD Trailer Modal */}
+      <TrailerModal
+        isOpen={!!activeTrailerMovie}
+        onClose={() => setActiveTrailerMovie(null)}
+        title={activeTrailerMovie?.title || ''}
+        trailerUrl={activeTrailerMovie?.trailerUrl}
+      />
     </div>
   );
 }

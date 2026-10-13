@@ -58,6 +58,8 @@ You can also switch between these accounts in 1 click using the **Instant Demo S
 
 ## 4. Engineering Documentation (`docs/`)
 
+- [Interview Guide & Technical Architecture Deep-Dive](docs/interview-guide.md)
+- [Secrets, Credentials & Production Integration Guide](docs/secrets-guide.md)
 - [Architecture Blueprint](docs/architecture.md)
 - [Database Schema & ER Diagram](docs/database-schema.md)
 - [REST API Contracts (`/api/v1`)](docs/api-contracts.md)
