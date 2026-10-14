@@ -54,20 +54,29 @@ export async function createApp(options: { seed?: boolean } = { seed: true }) {
     res.json(openApiSpec);
   });
 
-  // Health & Readiness Endpoint
-  app.get(
-    '/api/v1/health',
-    asyncHandler(async (_req, res) => {
+  // Root & Health & Readiness Endpoints
+  const healthCheckHandler = asyncHandler(async (_req, res) => {
+    let dbStatus = 'CONNECTED';
+    let serverTime: string | null = null;
+    try {
       const dbCheck = await db.query<{ now: string }>('SELECT NOW()::text as now');
-      res.json({
-        success: true,
-        status: 'UP',
-        service: 'tixora-api',
-        database: 'CONNECTED',
-        serverTime: dbCheck.rows[0]?.now,
-      });
-    })
-  );
+      serverTime = dbCheck.rows[0]?.now || new Date().toISOString();
+    } catch {
+      dbStatus = 'DEGRADED';
+      serverTime = new Date().toISOString();
+    }
+    res.json({
+      success: true,
+      status: 'UP',
+      service: 'tixora-api',
+      database: dbStatus,
+      serverTime,
+    });
+  });
+
+  app.get('/', healthCheckHandler);
+  app.get('/health', healthCheckHandler);
+  app.get('/api/v1/health', healthCheckHandler);
 
   // Versioned Business APIs (/api/v1)
   app.use('/api/v1/auth', identityRouter);

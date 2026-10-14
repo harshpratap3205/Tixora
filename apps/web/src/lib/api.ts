@@ -1,6 +1,15 @@
+const defaultRemoteBackend = 'https://tixora-6j4h.onrender.com';
+const resolvedRemote = (
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  process.env.BACKEND_API_URL ||
+  defaultRemoteBackend
+).replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ||
-  (typeof window !== 'undefined' ? '/api/v1' : 'http://127.0.0.1:8080/api/v1');
+  (typeof window !== 'undefined'
+    ? '/api/v1'
+    : `${resolvedRemote}/api/v1`);
 
 export interface ApiUser {
   id: string;

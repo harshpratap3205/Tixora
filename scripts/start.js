@@ -30,13 +30,10 @@ function startProcess(command, args, envVars = {}, name = 'PROCESS') {
   return child;
 }
 
-if (serviceType === 'api') {
-  console.log('[Tixora] Starting standalone API service...');
-  startProcess('node', ['apps/api/dist/server.js'], {}, 'API');
-} else if (serviceType === 'web') {
+if (serviceType === 'web') {
   console.log('[Tixora] Starting standalone Web service...');
   startProcess('npm', ['--workspace=@tixora/web', 'run', 'start'], {}, 'WEB');
-} else {
+} else if (serviceType === 'fullstack') {
   // Co-located Full-Stack: Backend API + Next.js Frontend together
   const publicPort = process.env.PORT || '3000';
   const internalApiPort = process.env.API_PORT || '8080';
@@ -50,14 +47,14 @@ if (serviceType === 'api') {
   const apiProcess = startProcess(
     'node',
     ['apps/api/dist/server.js'],
-    { PORT: internalApiPort, API_PORT: internalApiPort },
+    { PORT: String(internalApiPort), API_PORT: String(internalApiPort) },
     'API'
   );
 
   const webProcess = startProcess(
     'npm',
     ['--workspace=@tixora/web', 'run', 'start'],
-    { PORT: String(publicPort), INTERNAL_API_PORT: internalApiPort },
+    { PORT: String(publicPort), INTERNAL_API_PORT: String(internalApiPort) },
     'WEB'
   );
 
@@ -70,5 +67,16 @@ if (serviceType === 'api') {
 
   process.on('SIGINT', () => handleTermination('SIGINT'));
   process.on('SIGTERM', () => handleTermination('SIGTERM'));
+} else {
+  // Default for Render web service or API deployment:
+  // Directly bind API to Render's assigned PORT
+  const port = process.env.PORT || process.env.API_PORT || '8080';
+  console.log(`[Tixora] Starting Backend API service directly on port ${port}...`);
+  startProcess(
+    'node',
+    ['apps/api/dist/server.js'],
+    { PORT: String(port), API_PORT: String(port) },
+    'API'
+  );
 }
 

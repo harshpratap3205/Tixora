@@ -8,6 +8,14 @@ export const openApiSpec = {
   },
   servers: [
     {
+      url: '/api/v1',
+      description: 'Current Host (Relative API Root)',
+    },
+    {
+      url: 'https://tixora-6j4h.onrender.com/api/v1',
+      description: 'Render Production Server',
+    },
+    {
       url: 'http://localhost:8080/api/v1',
       description: 'Local Development Server',
     },
