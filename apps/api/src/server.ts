@@ -8,9 +8,9 @@ async function bootstrap() {
     const app = await createApp({ seed: true });
     notificationsAndJobsService.startBackgroundWorkers(15000);
 
-    app.listen(config.port, () => {
+    app.listen(config.port, '0.0.0.0', () => {
       logger.info(
-        `Tixora API running at http://localhost:${config.port}/api/v1 (Docs: http://localhost:${config.port}/api-docs)`
+        `Tixora API running at http://0.0.0.0:${config.port}/api/v1 (Docs: http://0.0.0.0:${config.port}/api-docs)`
       );
     });
   } catch (err) {

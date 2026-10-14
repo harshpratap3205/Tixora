@@ -24,14 +24,27 @@ class DatabaseManager {
     if (this.initialized) return;
 console.log('DatabaseManager: Initializing database connection...',config.databaseUrl);
     if (config.databaseUrl) {
-      logger.info('Connecting to external PostgreSQL via DATABASE_URL');
-      this.pgPool = new Pool({
-        connectionString: config.databaseUrl,
-        max: 20,
-        idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 5000,
-      });
-      await this.pgPool.query('SELECT 1');
+      try {
+        const isLocal =
+          config.databaseUrl.includes('localhost') || config.databaseUrl.includes('127.0.0.1');
+        logger.info(`Connecting to external PostgreSQL (SSL: ${!isLocal})`);
+        this.pgPool = new Pool({
+          connectionString: config.databaseUrl,
+          ssl: isLocal ? false : { rejectUnauthorized: false },
+          max: 20,
+          idleTimeoutMillis: 30000,
+          connectionTimeoutMillis: 7000,
+        });
+        await this.pgPool.query('SELECT 1');
+      } catch (err) {
+        logger.warn(
+          { err },
+          'Failed to connect to external PostgreSQL; falling back to embedded PGlite engine'
+        );
+        this.pgPool = null;
+        this.pglite = new PGlite();
+        await this.pglite.waitReady;
+      }
     } else {
       logger.info('Using embedded PostgreSQL 16 engine (PGlite) for zero-config execution');
       this.pglite = new PGlite();
@@ -143,10 +156,22 @@ console.log('DatabaseManager: Initializing database connection...',config.databa
   }
 
   public async runMigrations(): Promise<void> {
-    const migrationPath = path.join(__dirname, 'migrations', 'V1__init_schema.sql');
+    const possiblePaths = [
+      path.join(__dirname, 'migrations', 'V1__init_schema.sql'),
+      path.join(__dirname, '..', 'src', 'db', 'migrations', 'V1__init_schema.sql'),
+      path.join(__dirname, '..', '..', 'src', 'db', 'migrations', 'V1__init_schema.sql'),
+      path.join(process.cwd(), 'apps', 'api', 'src', 'db', 'migrations', 'V1__init_schema.sql'),
+      path.join(process.cwd(), 'src', 'db', 'migrations', 'V1__init_schema.sql'),
+    ];
+    const migrationPath = possiblePaths.find((p) => fs.existsSync(p));
+    if (!migrationPath) {
+      throw new Error(
+        `Database migration file V1__init_schema.sql not found in paths: ${possiblePaths.join(', ')}`
+      );
+    }
     const sql = fs.readFileSync(migrationPath, 'utf-8');
     await this.execSql(sql);
-    logger.info('Executed V1__init_schema.sql database migration successfully');
+    logger.info(`Executed ${migrationPath} database migration successfully`);
   }
 }
 

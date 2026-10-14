@@ -71,3 +71,4 @@ if (serviceType === 'api') {
   process.on('SIGINT', () => handleTermination('SIGINT'));
   process.on('SIGTERM', () => handleTermination('SIGTERM'));
 }
+

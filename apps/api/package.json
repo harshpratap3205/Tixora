@@ -6,7 +6,7 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc",
+    "build": "tsc && node -e \"const fs=require('fs'); fs.mkdirSync('dist/db/migrations', {recursive:true}); fs.copyFileSync('src/db/migrations/V1__init_schema.sql', 'dist/db/migrations/V1__init_schema.sql');\"",
     "start": "node dist/server.js",
     "test": "vitest run"
   },
