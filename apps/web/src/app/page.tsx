@@ -25,6 +25,8 @@ export default function HomePage() {
   const { city, setCity } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTrailerMovie, setActiveTrailerMovie] = useState<Movie | null>(null);
+  const [selectedFeaturedIndex, setSelectedFeaturedIndex] = useState(0);
+  const [selectedCategory, setSelectedCategory] = useState('ALL');
 
   const { data: movies, isLoading: loadingMovies } = useQuery({
     queryKey: ['movies', 'home'],
@@ -37,11 +39,21 @@ export default function HomePage() {
       apiFetch<Cinema[]>(`/cinemas${city ? `?city=${encodeURIComponent(city)}` : ''}`),
   });
 
-  const featuredMovie =
-    movies?.find((m) => m.isFeatured && m.releaseStatus === 'NOW_SHOWING') ||
-    movies?.[0];
+  const featuredCandidates =
+    movies?.filter((m) => m.isFeatured && m.releaseStatus === 'NOW_SHOWING') || [];
+  const featuredList = featuredCandidates.length > 0 ? featuredCandidates : (movies || []);
+  const featuredMovie = featuredList[selectedFeaturedIndex] || featuredList[0];
+
   const nowShowing =
-    movies?.filter((m) => m.releaseStatus === 'NOW_SHOWING') || [];
+    movies?.filter((m) => {
+      if (m.releaseStatus !== 'NOW_SHOWING') return false;
+      if (selectedCategory === 'ALL') return true;
+      if (selectedCategory === 'IMAX') return m.title.includes('IMAX') || m.genres.includes('Sci-Fi') || m.genres.includes('Action');
+      if (selectedCategory === 'ACTION') return m.genres.includes('Action') || m.genres.includes('Thriller');
+      if (selectedCategory === 'DRAMA') return m.genres.includes('Drama') || m.genres.includes('Crime');
+      return true;
+    }) || [];
+
   const upcoming = movies?.filter((m) => m.releaseStatus === 'UPCOMING') || [];
 
   const handleSearch = (e: React.FormEvent) => {
@@ -133,6 +145,29 @@ export default function HomePage() {
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </div>
+
+                {/* Featured Movie Quick Switcher Tabs */}
+                {featuredList.length > 1 && (
+                  <div className="pt-3 flex flex-wrap items-center gap-2">
+                    <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-400 mr-1">
+                      Featured Slate:
+                    </span>
+                    {featuredList.slice(0, 4).map((fMovie, idx) => (
+                      <button
+                        key={fMovie.id}
+                        type="button"
+                        onClick={() => setSelectedFeaturedIndex(idx)}
+                        className={`rounded px-2.5 py-1 text-xs font-medium transition ${
+                          selectedFeaturedIndex === idx
+                            ? 'bg-amber-400 text-zinc-950 font-bold shadow'
+                            : 'bg-zinc-900/90 border border-zinc-800 text-zinc-300 hover:border-amber-400/50'
+                        }`}
+                      >
+                        {fMovie.title}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </>
             ) : (
               <div className="h-64 animate-pulse rounded bg-zinc-900/50" />
@@ -141,8 +176,53 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Engineering Integrity & Architecture Ribbon */}
+      <section className="mx-auto max-w-7xl px-4 sm:px-6 -mt-10 relative z-30">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 rounded-lg border border-zinc-800/80 bg-[#111115]/95 backdrop-blur-md p-4 shadow-xl text-xs">
+          <div className="flex items-center gap-2.5 p-1">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-amber-400/30 bg-amber-400/10 text-amber-400">
+              <Shield className="h-4 w-4" />
+            </span>
+            <div>
+              <span className="block font-semibold text-zinc-100">Zero Double-Booking</span>
+              <span className="text-[11px] text-zinc-400">PostgreSQL Row Locks (FOR UPDATE)</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5 p-1">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-amber-400/30 bg-amber-400/10 text-amber-400">
+              <Ticket className="h-4 w-4" />
+            </span>
+            <div>
+              <span className="block font-semibold text-zinc-100">Cryptographic QR Passes</span>
+              <span className="text-[11px] text-zinc-400">HMAC-SHA256 Gate Verification</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5 p-1">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-amber-400/30 bg-amber-400/10 text-amber-400">
+              <Sparkles className="h-4 w-4" />
+            </span>
+            <div>
+              <span className="block font-semibold text-zinc-100">Dual-Token JWT Security</span>
+              <span className="text-[11px] text-zinc-400">Rotating Refresh Token Sessions</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5 p-1">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-amber-400/30 bg-amber-400/10 text-amber-400">
+              <Film className="h-4 w-4" />
+            </span>
+            <div>
+              <span className="block font-semibold text-zinc-100">15 Modular Domains</span>
+              <span className="text-[11px] text-zinc-400">21 Relational Database Tables</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Quick Discovery & Search Bar */}
-      <section className="mx-auto -mt-12 relative z-20 max-w-7xl px-4 sm:px-6">
+      <section className="mx-auto mt-4 relative z-20 max-w-7xl px-4 sm:px-6">
         <div className="rounded-lg border border-zinc-800 bg-[#111115] p-5 shadow-2xl">
           <form
             onSubmit={handleSearch}
@@ -211,6 +291,29 @@ export default function HomePage() {
           >
             View All Releases <ArrowRight className="h-3.5 w-3.5" />
           </Link>
+        </div>
+
+        {/* Category Filter Tabs */}
+        <div className="flex flex-wrap items-center gap-2">
+          {[
+            { id: 'ALL', label: 'All Films' },
+            { id: 'IMAX', label: 'IMAX Laser & Sci-Fi' },
+            { id: 'ACTION', label: 'Action & Thriller' },
+            { id: 'DRAMA', label: 'Drama & Crime' },
+          ].map((cat) => (
+            <button
+              key={cat.id}
+              type="button"
+              onClick={() => setSelectedCategory(cat.id)}
+              className={`rounded-full px-4 py-1.5 text-xs font-medium transition ${
+                selectedCategory === cat.id
+                  ? 'bg-amber-400 text-zinc-950 font-bold shadow-md'
+                  : 'bg-zinc-900 border border-zinc-800 text-zinc-300 hover:border-zinc-700'
+              }`}
+            >
+              {cat.label}
+            </button>
+          ))}
         </div>
 
         {loadingMovies ? (

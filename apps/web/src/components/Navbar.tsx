@@ -14,8 +14,10 @@ import {
   Menu,
   X,
   Sparkles,
+  GraduationCap,
 } from 'lucide-react';
 import { useApp } from './Providers';
+import ProjectShowcaseModal from './ProjectShowcaseModal';
 
 const CITIES = ['', 'Mumbai', 'New Delhi', 'Bengaluru'];
 
@@ -24,6 +26,7 @@ export function Navbar() {
   const { user, city, setCity, logout, loginWithCredentials } = useApp();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [switchingRole, setSwitchingRole] = useState(false);
+  const [showcaseOpen, setShowcaseOpen] = useState(false);
 
   const isManager =
     user?.roles.includes('CINEMA_MANAGER') ||
@@ -170,8 +173,17 @@ export function Navbar() {
           </nav>
         </div>
 
-        {/* Right Controls: City Selector & Auth */}
-        <div className="hidden md:flex items-center gap-4">
+        {/* Right Controls: Architecture Button, City Selector & Auth */}
+        <div className="hidden md:flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setShowcaseOpen(true)}
+            className="flex items-center gap-1.5 rounded-full border border-amber-400/50 bg-amber-400/10 px-3 py-1.5 text-xs font-semibold text-amber-300 hover:bg-amber-400 hover:text-zinc-950 transition shadow-sm"
+          >
+            <GraduationCap className="h-3.5 w-3.5" />
+            <span>Architecture & Capstone</span>
+          </button>
+
           <div className="flex items-center gap-2 rounded border border-zinc-800 bg-zinc-900/80 px-3 py-1.5 text-xs">
             <MapPin className="h-3.5 w-3.5 text-amber-400" />
             <select
@@ -262,9 +274,20 @@ export function Navbar() {
                 Platform Admin Console
               </Link>
             )}
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                setShowcaseOpen(true);
+              }}
+              className="flex items-center gap-2 py-1 text-amber-300 font-semibold"
+            >
+              <GraduationCap className="h-4 w-4" />
+              Project Architecture & Capstone
+            </button>
           </div>
         </div>
       )}
+      <ProjectShowcaseModal isOpen={showcaseOpen} onClose={() => setShowcaseOpen(false)} />
     </header>
   );
 }
@@ -274,26 +297,41 @@ export function Footer() {
     <footer className="border-t border-zinc-900 bg-[#09090B] py-12 text-sm text-zinc-500">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
         <div>
-          <p className="font-display text-lg font-bold tracking-[0.18em] text-zinc-200">
-            TIXORA
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="font-display text-lg font-bold tracking-[0.18em] text-zinc-200">
+              TIXORA
+            </p>
+            <span className="rounded bg-amber-400/15 border border-amber-400/30 px-2 py-0.5 text-[10px] font-mono text-amber-300">
+              College Capstone Showcase
+            </span>
+          </div>
           <p className="mt-1 text-xs text-zinc-500">
-            Your Seat. Your Show. Your Moment. · Authoritative PostgreSQL Reservation Engine.
+            High-Concurrency Movie Ticketing Platform · PostgreSQL ACID Engine · Zero Double-Booking.
           </p>
         </div>
-        <div className="flex flex-wrap gap-6 text-xs font-mono uppercase tracking-wider">
+        <div className="flex flex-wrap items-center gap-6 text-xs font-mono uppercase tracking-wider">
           <Link href="/movies" className="hover:text-amber-400">
             Now Showing
           </Link>
           <Link href="/cinemas" className="hover:text-amber-400">
-            IMAX & Noir Suites
+            Cinemas
           </Link>
-          <Link href="/manager" className="hover:text-amber-400">
-            Cinema Operations
-          </Link>
-          <Link href="/admin" className="hover:text-amber-400">
-            Platform Governance
-          </Link>
+          <a
+            href="https://tixora-6j4h.onrender.com/api-docs"
+            target="_blank"
+            rel="noreferrer"
+            className="hover:text-amber-400 text-amber-300/90"
+          >
+            Swagger API Docs ↗
+          </a>
+          <a
+            href="https://github.com/harshpratap3205/Tixora"
+            target="_blank"
+            rel="noreferrer"
+            className="hover:text-amber-400"
+          >
+            GitHub Repo ↗
+          </a>
         </div>
       </div>
     </footer>
