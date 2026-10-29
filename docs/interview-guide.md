@@ -4,6 +4,59 @@ This document provides a complete technical explanation of **Tixora**, detailing
 
 ---
 
+## 0. Resume Bullet Point Alignment & Elevator Pitch
+
+### 📄 How It Appears on the Resume:
+```text
+Tixora – Movie Ticket Booking Platform                                               GitHub
+Next.js, TypeScript, Node.js, Express.js, PostgreSQL, Docker
+• Built a booking platform with customer, cinema, and admin portals for showtimes, seats, and QR tickets.
+• Added JWT refresh sessions, Zod validation, Swagger docs, and integration tests.
+```
+
+---
+
+### 🎙️ 60-Second Elevator Pitch:
+> *"Tixora is a production-minded movie ticket booking platform built with Next.js 14, TypeScript, Node.js, Express, and PostgreSQL. It delivers three dedicated portals: a Customer portal for exploring movies, streaming trailers, selecting seats, and downloading signed QR passes; a Cinema Manager portal for screen management and gate check-in scanning; and an Admin portal for real-time analytics and audit logs.*  
+> *Under the hood, I designed it as a modular monolith across 15 domain modules. I solved the classic high-concurrency seat-booking race condition using PostgreSQL row locks (`SELECT ... FOR UPDATE`) with deterministic ordering to guarantee zero double-booking and zero deadlocks. On the security and quality side, I implemented rotating JWT refresh sessions, Zod schema validation on every route, interactive Swagger/OpenAPI documentation, and an 8-stage integration and concurrency test suite in Vitest that simulates 20 concurrent users competing for the exact same seat."*
+
+---
+
+### 🔍 Deep-Dive by Resume Bullet Point:
+
+#### Bullet 1: "Built a booking platform with customer, cinema, and admin portals for showtimes, seats, and QR tickets."
+- **Customer Portal**:
+  - Live movie catalog with YouTube trailer modal previews.
+  - Interactive auditorium seating matrix rendered dynamically with four distinct pricing tiers: **Standard, Prime, Recliner, and IMAX VIP**.
+  - Real-time 8-minute reservation countdown timer with optimistic seat hold locking.
+  - Generates verifiable digital ticket passes with cryptographically signed QR codes (`TXQR...`).
+- **Cinema / Manager Portal**:
+  - Scoped Role-Based Access Control (RBAC): Managers are bound to their designated cinema locations (`cinema_staff`), preventing unauthorized cross-location access.
+  - Screen configuration and screening scheduling with automated cleaning turnaround intervals (20 mins).
+  - Gate check-in scanner that decodes the QR token, verifies the cryptographic signature with constant-time equality checks, and prevents duplicate check-ins (`DUPLICATE_REJECTED`).
+- **Admin Portal**:
+  - System-wide revenue, ticket velocity, and active seat hold metrics.
+  - Audit logging engine (`audit_logs`) capturing user roles, entity mutations, and late payment reconciliation events.
+
+#### Bullet 2: "Added JWT refresh sessions, Zod validation, Swagger docs, and integration tests."
+- **JWT Refresh Sessions**:
+  - Dual-token authentication: Short-lived 15-minute JWT access tokens combined with rotating HTTP-only refresh tokens.
+  - Refresh tokens are hashed using SHA-256 before storage in PostgreSQL (`refresh_sessions`).
+  - Family reuse detection: If an old or revoked refresh token is re-submitted, the entire session family is invalidated to mitigate replay and token-theft attacks.
+- **Zod Validation**:
+  - Strict schema validation across all request params, queries, and bodies (e.g., UUID validation for showtimes, seat array constraints, and registration inputs).
+  - Centralized error handling returning structured RFC-7807 compliant error responses.
+- **Swagger Documentation**:
+  - OpenAPI 3.0 specification exported at `/api/v1/openapi.json` and hosted via Swagger UI at `/api-docs`.
+  - Documents all 22+ API endpoints with security schemas, query parameters, request bodies, and error response codes.
+- **Integration Tests (Vitest & Supertest)**:
+  - 8 automated test suites passing with 100% success rate (`npm test`).
+  - Specifically features a high-concurrency race test: **20 simultaneous requests competing for seat D6**, confirming that exactly 1 request wins (HTTP 201) while the other 19 receive HTTP 409 Conflict without deadlocks.
+
+---
+
+---
+
 ## 1. Project High-Level Overview
 
 **Tixora** is an architectural movie ticket discovery, auditorium seat reservation, and digital ticketing platform inspired by BookMyShow. Unlike generic CRUD applications or prototypes:
